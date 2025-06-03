@@ -14,23 +14,9 @@ return new class extends Migration
         Schema::create('bookmarks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('item_id')->nullable()->unique();
-            $table->string('resolved_id')->nullable();
-            $table->string('given_url')->nullable();
-            $table->string('given_title')->nullable();
-            $table->string('resolved_url')->nullable();
-            $table->string('resolved_title')->nullable();
-            $table->string('favorite')->nullable();
-            $table->text('excerpt')->nullable();
-            $table->boolean('is_article')->nullable();
-            $table->boolean('has_video')->nullable();
-            $table->boolean('has_image')->nullable();
-            $table->integer('word_count')->nullable();
-            $table->string('lang')->nullable();
+            $table->string('title')->nullable();
+            $table->text('url');
             $table->timestamp('time_added')->nullable();
-            $table->timestamp('time_updated')->nullable();
-            $table->timestamp('time_read')->nullable();
-            $table->timestamp('time_favorited')->nullable();
             $table->string('status')->default('published');
             $table->text('notes')->nullable();
             $table->timestamps();

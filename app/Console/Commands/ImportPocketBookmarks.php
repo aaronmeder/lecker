@@ -56,57 +56,44 @@ class ImportPocketBookmarks extends Command
         $count = 0;
 
         foreach ($records as $record) {
-            ray("Processing record: ", $record)->die();
             // Convert Unix timestamp to datetime
             $timeAdded = isset($record['time_added'])
                 ? Carbon::createFromTimestamp((int)$record['time_added'])
                 : null;
 
-            $timeUpdated = isset($record['time_updated']) && !empty($record['time_updated'])
-                ? Carbon::createFromTimestamp((int)$record['time_updated'])
-                : null;
-
-            $timeRead = isset($record['time_read']) && !empty($record['time_read'])
-                ? Carbon::createFromTimestamp((int)$record['time_read'])
-                : null;
-
-            $timeFavorited = isset($record['time_favorited']) && !empty($record['time_favorited'])
-                ? Carbon::createFromTimestamp((int)$record['time_favorited'])
-                : null;
+            // Truncate title if it's too long (max 255 characters)
+            $title = isset($record['title']) ? substr($record['title'], 0, 255) : null;
 
             // Create the bookmark
             $bookmark = Bookmark::create([
                 'user_id' => $userId,
-                'item_id' => $record['item_id'] ?? null,
-                'resolved_id' => $record['resolved_id'] ?? null,
-                'given_url' => $record['given_url'] ?? null,
-                'given_title' => $record['given_title'] ?? null,
-                'resolved_url' => $record['resolved_url'] ?? null,
-                'resolved_title' => $record['resolved_title'] ?? null,
-                'favorite' => $record['favorite'] ?? null,
-                'excerpt' => $record['excerpt'] ?? null,
-                'is_article' => isset($record['is_article']) ? (bool)$record['is_article'] : null,
-                'has_video' => isset($record['has_video']) ? (bool)$record['has_video'] : null,
-                'has_image' => isset($record['has_image']) ? (bool)$record['has_image'] : null,
-                'word_count' => isset($record['word_count']) ? (int)$record['word_count'] : null,
-                'lang' => $record['lang'] ?? null,
+                'title' => $title,
+                'url' => $record['url'] ?? null,
                 'time_added' => $timeAdded,
-                'time_updated' => $timeUpdated,
-                'time_read' => $timeRead,
-                'time_favorited' => $timeFavorited,
                 'status' => 'published',
-                'notes' => '',
-                'created_at' => $timeAdded,
+                'notes' => ''
             ]);
 
-            // Process tags
+            // Process tags - split the pipe-separated string into individual tags
             if (isset($record['tags']) && !empty($record['tags'])) {
-                $tagNames = explode(',', $record['tags']);
+                $tagNames = explode('|', $record['tags']);
+                $tagIds = [];
+
                 foreach ($tagNames as $tagName) {
                     $tagName = trim($tagName);
                     if (!empty($tagName)) {
                         $tag = Tag::firstOrCreate(['name' => $tagName]);
-                        $bookmark->tags()->attach($tag->id);
+                        $tagIds[] = $tag->id;
+                    }
+                }
+
+                // Use syncWithoutDetaching instead of attach to prevent duplicates
+                if (!empty($tagIds)) {
+                    $bookmark->tags()->syncWithoutDetaching($tagIds);
+
+                    // Manually increment usage count for imported tags
+                    foreach ($tagIds as $tagId) {
+                        Tag::find($tagId)->incrementUsage();
                     }
                 }
             }
