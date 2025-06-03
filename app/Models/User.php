@@ -57,4 +57,12 @@ class User extends Authenticatable
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
     }
+
+    /**
+     * Get the bookmarks for the user.
+     */
+    public function bookmarks()
+    {
+        return $this->hasMany(Bookmark::class);
+    }
 }

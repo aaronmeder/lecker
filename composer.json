@@ -13,6 +13,7 @@
         "blade-ui-kit/blade-icons": "^1.8",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "league/csv": "^9.23",
         "owenvoke/blade-fontawesome": "^2.9"
     },
     "require-dev": {
